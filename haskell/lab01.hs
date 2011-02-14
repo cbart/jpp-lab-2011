@@ -1,48 +1,115 @@
-ttake :: Int -> [a] -> [a]
-ttake i l = rtake [] i l
+module Lab01 where
+
+id1 :: a -> a
+id1 a = a  -- Returns its argument
+
+fst1 :: (a, b) -> a
+fst1 (a, b) = a  -- Returns first element
+
+snd1 :: (a, b) -> b
+snd1 (a, b) = b  -- Return second element
+
+pred1 :: (Num n) => n -> n
+pred1 n = let { n_pred = n - 1 } in id $! n_pred
+
+length3 :: [a] -> Integer
+length3 l = length3rec l 0
     where
-    rtake :: [a] -> Int -> [a] -> [a]
-    rtake acc 0 l = acc
-    rtake acc i [] = error "Empty list given"
-    rtake acc i (lh:lt) = rtake (acc ++ [lh]) (i - 1) lt
+        length3rec :: (Num n) => [a] -> n -> n  -- Returns n + length a
+        length3rec [] n = n
+        length3rec (_:xs) n = length3rec xs $! (n + 1)
 
-hhead :: [a] -> a
-hhead [] = error "Empty list given"
-hhead (lh:lt) = lh
-
-ttail :: [a] -> [a]
-ttail [] = error "Empty list given"
-ttail (lh:lt) = lt
-
-ddrop :: Int -> [a] -> [a]
-ddrop 0 l = l
-ddrop i [] = error "Too short list given"
-ddrop i (lh:lt) = ddrop (i - 1) lt
-
-rreverse :: [a] -> [a]
-rreverse l = rrreverse [] l
+take1 :: (Num n) => n -> [a] -> [a]
+take1 n l = reverse1 $ snd1 $ foldl take1rec (n, []) l
     where
-    rrreverse acc [] = acc
-    rrreverse acc (lh:lt) = rrreverse (lh:acc) lt
+        take1rec :: (Num n) => (n, [a]) -> a -> (n, [a])
+        take1rec (0, l) _ = (0, l)
+        take1rec (n, l) a = (pred1 n, a:l)
 
-iinits :: [b] -> [[b]]
-iinits [] = [[]]
-iinits (h:hs) = [] : map (h : ) (iinits hs)
+head1 :: [a] -> a
+head1 [] = error "Empty list given"
+head1 (lh:lt) = lh
 
-ppartitions :: [a] -> [([a], [a])]
-ppartitions [] = [([], [])]
-ppartitions (h:hs) = (([], (h:hs)) : (map (\(x, y) -> ((h:x), y)) (ppartitions hs)))
+tail1 :: [a] -> [a]
+tail1 [] = error "Empty list given"
+tail1 (lh:lt) = lt
 
-zpartitions :: [a] -> [([a], [a])]
-zpartitions l = zip (iinits l) (map rreverse (iinits (rreverse l)))
+last1 :: [a] -> a
+last1 = head1 . reverse1
 
-ppermutations :: [a] -> [[a]]
-ppermutations [] = [[]]
-ppermutations (h:hs) = concatMap (anywhere h) (ppermutations hs)
+init1 :: [a] -> [a]
+init1 = reverse1 . tail1 . reverse1
+
+drop1 :: (Num n) => n -> [a] -> [a]
+drop1 0 l = l
+drop1 i [] = error "Too short list given"
+drop1 i (lh:lt) = drop1 (i - 1) lt
+
+reverse1 :: [a] -> [a]
+reverse1 = foldl (flip (:)) []
+
+inits1 :: [a] -> [[a]]
+inits1 [] = [[]]
+inits1 (x:xs) = [] : map (x : ) (inits1 xs)
+
+tails1 :: [a] -> [[a]]
+tails1 l = foldl (\t _ -> (tail1 $ head1 t):t) [l] l
+
+inits2 :: [a] -> [[a]]
+inits2 l = map reverse1 $ tails1 $ reverse1 l
+
+partitions1 :: [a] -> [([a], [a])]
+partitions1 l = [(left, right)
+    | left <- inits1 l,
+      right <- tails1 l,
+      length3 l == length3 left + length3 right]
+
+partitions2 :: [a] -> [([a], [a])]
+partitions2 [] = [([], [])]
+partitions2 (h:hs) = (([], (h:hs)) : (map (\(x, y) -> ((h:x), y)) (partitions2 hs)))
+
+partitions3 :: [a] -> [([a], [a])]
+partitions3 l = zip (inits1 l) $ map reverse1 $ inits1 $ reverse1 l
+
+permutations1 :: [a] -> [[a]]  -- Returns list of permutations
+permutations1 [] = [[]]
+permutations1 (h:hs) = concatMap (anywhere1 h) (permutations1 hs)
     where
-    anywhere x [] = [[x]]
-    anywhere x (h:hs) = (x:h:hs):(map (h:) (anywhere x hs))
+    anywhere1 e [] = [[e]]
+    anywhere1 e (x:xs) = (e:x:xs) : (map (x:) $ anywhere1 e xs)
 
-nub :: (Eq a) => [a] -> [a]
-nub [] = []
-nub (h:hs) = h : (nub (filter (/= h) hs))
+nub1 :: (Eq a) => [a] -> [a]  -- Returns list of unique elements
+nub1 [] = []
+nub1 (h:hs) = h : (nub1 $ filter (/= h) hs)
+
+triads2 :: (Num n) => (Enum n) => n -> [(n, n, n)]
+triads2 n = [(x, y, z) |
+    x <- [0..n], y <- [0..n], z <- [0..n],
+    square x + square y == square z]
+    where
+        square :: (Num n) => n -> n
+        square n = n * n
+
+factorial1 :: (Num n) => n -> n
+factorial1 = factorial1rec 1
+    where
+        factorial1rec :: (Num n) => n -> n -> n
+        factorial1rec acc 0 = acc
+        factorial1rec acc n = let
+                newAcc = acc * n
+                newN = n - 1
+            in
+            newAcc `seq` newN `seq` factorial1rec newAcc newN
+
+factorial2 :: (Num n) => n -> Integer
+factorial2 n = length3 $ permutations1 (take1 n [1..])
+
+fibonacci1 :: (Num n) => n -> n
+fibonacci1 n = fibonacci1rec 0 1 n
+    where
+        fibonacci1rec :: (Num n) => n -> n -> n -> n
+        fibonacci1rec a b 0 = a
+        fibonacci1rec a b n = let
+                aPlusB = a + b
+                nPred = n - 1
+            in aPlusB `seq` nPred `seq` fibonacci1rec b aPlusB nPred
