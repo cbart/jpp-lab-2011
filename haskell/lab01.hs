@@ -82,7 +82,7 @@ nub1 :: (Eq a) => [a] -> [a]  -- Returns list of unique elements
 nub1 [] = []
 nub1 (h:hs) = h : (nub1 $ filter (/= h) hs)
 
-triads2 :: (Num n) => (Enum n) => n -> [(n, n, n)]
+triads2 :: (Num n, Enum n) => n -> [(n, n, n)]
 triads2 n = [(x, y, z) |
     x <- [0..n], y <- [0..n], z <- [0..n],
     square x + square y == square z]
@@ -98,8 +98,7 @@ factorial1 = factorial1rec 1
         factorial1rec acc n = let
                 newAcc = acc * n
                 newN = n - 1
-            in
-            newAcc `seq` newN `seq` factorial1rec newAcc newN
+            in seq newAcc $ seq newN $ factorial1rec newAcc newN
 
 factorial2 :: (Num n) => n -> Integer
 factorial2 n = length3 $ permutations1 (take1 n [1..])
@@ -113,3 +112,29 @@ fibonacci1 n = fibonacci1rec 0 1 n
                 aPlusB = a + b
                 nPred = n - 1
             in aPlusB `seq` nPred `seq` fibonacci1rec b aPlusB nPred
+
+indexOf1 :: (Num n) => Char -> String -> Maybe n
+indexOf1 c s = indexOf1rec 0 c s
+    where
+        indexOf1rec :: (Num n) => n -> Char -> String -> Maybe n
+        indexOf1rec _ _ [] = Nothing
+        indexOf1rec i c (s:ss)
+            | c == s = Just i
+            | otherwise = indexOf1rec (i + 1) c ss
+
+indexOf2 :: Char -> String -> Maybe Int
+indexOf2 c s = lookup c $ zip s [0,1..]
+
+indexOf3 :: Char -> String -> Maybe Int
+indexOf3 c [] = Nothing
+indexOf3 c (s:ss)
+    | c == s = Just 0
+    | otherwise = indexOf3 c ss >>= Just . (+1)
+
+positions1 :: Char -> String -> [Int]
+positions1 c s = map snd $ filter ((c==) . fst) $ zip s [0, 1..]
+
+smain :: String -> String
+smain = id
+
+main = interact smain
