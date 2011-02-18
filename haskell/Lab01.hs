@@ -137,4 +137,4 @@ positions1 c s = map snd $ filter ((c==) . fst) $ zip s [0, 1..]
 smain :: String -> String
 smain = id
 
-main = interact smain
+--main = interact smain
