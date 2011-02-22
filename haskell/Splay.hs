@@ -5,7 +5,6 @@ module Splay
 , lookup
 , fromList
 , toList
-, size
 ) where
 
 import Prelude hiding(lookup)
@@ -38,7 +37,3 @@ fromList = foldl (flip $ uncurry insert) Empty
 toList :: (Ord k) => Dict k v -> [(k, v)]
 toList Empty = []
 toList (Node p l r) = (toList l) ++ [p] ++ (toList r)
-
-size :: (Ord k) => Dict k v -> Int
-size Empty = 0
-size (Node _ l r) = 1 + size l + size r

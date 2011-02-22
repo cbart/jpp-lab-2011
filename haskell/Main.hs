@@ -17,11 +17,14 @@ parseLines input d =
         mline <- hGetLine' input
         case mline of
             Nothing -> return d
-            Just line -> parseLines input $ foldr countWord d $ filter ((> 2) . length) $ words line
+            Just line -> parseLines input $ foldr countWord d $ filter longWord $ words line
     where
         countWord :: (Integral n) => String -> Dict String n -> Dict String n
         countWord w d = insert w count d
             where count = maybe 1 (+1) $ Splay.lookup w d
+        longWord :: String -> Bool
+        longWord (_:_:_) = True
+        longWord _ = False
 
 printLines :: (Integral n) => Handle -> [(String, n)] -> IO [(String, n)]
 printLines _ [] = return []
