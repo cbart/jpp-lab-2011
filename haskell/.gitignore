@@ -1,3 +1,5 @@
 Main
 *.hi
 *.o
+dict/words
+dict/test
