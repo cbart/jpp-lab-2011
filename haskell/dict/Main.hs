@@ -1,43 +1,45 @@
 module Main where
 
+import Prelude hiding(lookup)
 import Splay
 import System.IO
+import Data.Char
 import Data.List(sortBy)
+import System.Environment(getArgs)
 
-hGetLine' :: Handle -> IO (Maybe String)
-hGetLine' input = do
-    eof <- hIsEOF input
-    if eof
-        then return Nothing
-        else hGetLine input >>= return . Just
+parseString :: (Integral n) => String -> Dict String n
+parseString = foldr addWord empty . validWords
 
-parseLines :: (Integral n) => Handle -> Dict String n -> IO (Dict String n)
-parseLines input d =
-    do
-        mline <- hGetLine' input
-        case mline of
-            Nothing -> return d
-            Just line -> parseLines input $ foldr countWord d $ filter longWord $ words line
-    where
-        countWord :: (Integral n) => String -> Dict String n -> Dict String n
-        countWord w d = insert w count d
-            where count = maybe 1 (+1) $ Splay.lookup w d
-        longWord :: String -> Bool
-        longWord (_:_:_:_) = True
-        longWord _ = False
+addWord :: (Integral n) => String -> Dict String n -> Dict String n
+addWord s dict = insert s c' dict
+    where c' = maybe 1 (+1) $ lookup s dict
 
-printLines :: (Integral n) => Handle -> [(String, n)] -> IO [(String, n)]
-printLines _ [] = return []
-printLines output (p:ps) = do
-    hPutStrLn output $ toString p
-    printLines output ps
-    where
-        toString :: (Integral n) => (String, n) -> String
-        toString (s, n) = s ++ " " ++ show n
+validWords :: String -> [String]
+validWords s = filter (longerThan 2) $ words $ map letterOrSpace s
+
+longerThan :: (Integral n) => n -> String -> Bool
+longerThan 0 (_:_) = True
+longerThan n (_:cs) = longerThan (n - 1) cs
+longerThan _ [] = False
+
+letterOrSpace :: Char -> Char
+letterOrSpace c = if isLetter c then c else ' '
+
+printTopWords :: (Integral n) => Dict String n -> IO ()
+printTopWords dict = do
+    putStr $ unlines $ map toString' $ take 10 $ sortBy (flip wordCounts) $ toList dict
+
+toString' :: (Integral n) => (String, n) -> String
+toString' (s, n) = s ++ " " ++ show n
+
+wordCounts :: (Integral n) => (String, n) -> (String, n) -> Ordering
+wordCounts (_, n) (_, m) = compare n m
 
 main :: IO ()
 main = do
-    parsed <- parseLines stdin empty
-    let revSwapCompare b a = compare (snd a, fst a) (snd b, fst b)
-    _ <- printLines stdout $ take 10 $ sortBy revSwapCompare $ toList parsed
-    return ()
+    args <- getArgs
+    fileHandle <- openFile (head args) ReadMode
+    fileContent <- hGetContents fileHandle
+    let dict = parseString fileContent
+    printTopWords dict
+    hClose fileHandle
