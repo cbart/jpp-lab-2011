@@ -2,4 +2,4 @@ HC=ghc
 HSFLAGS=-O
 
 all:
-	$(HC) $(HSFLAGS) -o lab01 lab01.hs
+	$(HC) $(HSFLAGS) -o lab03haskell Lab03Haskell.hs
