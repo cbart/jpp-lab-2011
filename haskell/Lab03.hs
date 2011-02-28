@@ -36,5 +36,3 @@ allPairs2 xs ys = do
   x <- xs
   y <- ys
   return [x, y]
-  
-
