@@ -7,16 +7,9 @@ instance Monad (Either a) where
   Right m >>= k = k m
   Left e >>= _ = Left e
 
+-- Zadanie 1
 readInts :: Integral n => Read n => String -> Either String [n]
-readInts s = foldr allRights (return []) $ map eitherRead $ words s
-  where
-    eitherRead :: (Read a) => String -> Either String a
-    eitherRead s = maybe (Left "Error") return $ maybeRead s
-    allRights :: (Integral n) => Either String n -> Either String [n] -> Either String [n]
-    allRights e acc = (>>=) acc $ \l -> (>>=) e $ Right . (:l)
-
-readInts2 :: Integral n => Read n => String -> Either String [n]
-readInts2 s = maybe (Left "Error") return $ foldr (liftM2 (:)) (return []) $ map maybeRead $ words s
+readInts s = maybe (Left "Error") return $ foldr (liftM2 (:)) (return []) $ map maybeRead $ words s
 
 sumInts :: String -> String
 sumInts s = either id (unwords . map show) $ (readInts s) >>= (return . (:[]) . foldr (+) 0)
@@ -36,3 +29,5 @@ allPairs2 xs ys = do
   x <- xs
   y <- ys
   return [x, y]
+
+
