@@ -1,0 +1,3 @@
+compile('tours.pl').
+save_program('tours.sav').
+halt.
