@@ -1,0 +1,12 @@
+r1 : (zakopane, przeziny, rower, 25).
+r2 : (brzeziny, gasienicowa, rower, 15).
+r3 : (brzeziny, poroniec, rower, 10).
+r4 : (poroniec, rusinowa, rower, 6).
+g1 : (zakopane, kuznice, gorska, 7).
+g2 : (zakopane, kalatowki, gorska, 5).
+g3 : (kuznice, gasienicowa, gorska, 7).
+g4 : (gasienicowa, zawrat, gorska, 6).
+g5 : (gasienicowa, czarnystaw, gorska, 3).
+g6 : (zawrat, kozia, gorska, 5).
+g7 : (kozia, gasienicowa, gorska, 7).
+p1 : (zakopane, gubalowka, piesza, 5).

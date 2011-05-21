@@ -1,3 +1,5 @@
 SchemeParser
 *.hi
 *.o
+*.sav
+tours
