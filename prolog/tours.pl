@@ -41,9 +41,10 @@ conditions(Tours, Begin, End) :-
     read(Conditions),
     parse_conditions(Conditions, [], ParsedKinds, [], AllowedLengths),
     allowed_kinds(Tours, ParsedKinds, AllowedKinds),
+    allowed_lengths(AllowedLengths, SingleLength),
     !,
     nl,
-    path(Tours, Begin, End, AllowedKinds, AllowedLengths).
+    path(Tours, Begin, End, AllowedKinds, SingleLength).
 
 parse_conditions(nil, AllowedKinds, AllowedKinds, AllowedLengths, AllowedLengths).
 parse_conditions(kind(K), AccKinds, [K | AccKinds], AllowedLengths, AllowedLengths).
@@ -59,6 +60,12 @@ allowed_kinds(_, AllowedKinds, AllowedKinds).
 
 has_kind(Tours, Kind) :-
     member(_ : (_, _, Kind, _), Tours).
+
+allowed_lengths([], nil).
+allowed_lenghts([SingleLength], SingleLength).
+allowed_lengths(_, _) :-
+    format("\nError: too many length conditions!", []),
+    fail.
 
 path(Tours, Begin, End, AllowedKinds, _) :-
     findall(Path, find_path(Tours, Begin, End, [], Path), Paths),
