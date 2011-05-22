@@ -26,25 +26,79 @@ begin(Tours) :-
     format("Tour begin: ", []),
     read(Begin),
     nl,
+    end_nil(Tours, Begin).
+
+end_nil(_, halt).
+end_nil(Tours, nil) :-
+    end(Tours, _).
+end_nil(Tours, Begin) :-
     end(Tours, Begin).
 
-end(_, halt).
 end(Tours, Begin) :-
     format("Tour end: ", []),
     read(End),
     nl,
+    conditions_nil(Tours, Begin, End).
+
+conditions_nil(Tours, Begin, nil) :-
+    conditions(Tours, Begin, _).
+conditions_nil(Tours, Begin, End) :-
     conditions(Tours, Begin, End).
 
 conditions(Tours, Begin, End) :-
     repeat,
     format("Conditions: ", []),
     read(Conditions),
+    valid_conditions(Conditions),
     parse_conditions(Conditions, [], ParsedKinds, [], AllowedLengths),
     allowed_kinds(Tours, ParsedKinds, AllowedKinds),
     allowed_lengths(AllowedLengths, LengthExpectation),
     !,
     nl,
     path(Tours, Begin, End, AllowedKinds, LengthExpectation).
+
+valid_conditions(nil).
+valid_conditions(kind(Kind)) :-
+    valid_kind(Kind),
+    !.
+valid_conditions(length(Operator, Length)) :-
+    valid_operator(Operator),
+    valid_length(Length),
+    !.
+valid_conditions((Condition, Conditions)) :-
+    valid_conditions(Condition),
+    valid_conditions(Conditions),
+    !.
+valid_conditions(SomeCondition) :-
+    (atom(SomeCondition) ->
+        format("\n[ERROR]: Error in conditions! \"~a\" not understood.\n", [SomeCondition])
+    ;
+        !
+    ),
+    fail,
+    !.
+
+valid_kind(Kind) :-
+    atom(Kind).
+valid_kind(_) :-
+    format("\n[ERROR]: Kind not understood!\n", []),
+    fail,
+    !.
+
+valid_operator(eq).
+valid_operator(lt).
+valid_operator(le).
+valid_operator(gt).
+valid_operator(ge).
+valid_operator(_) :-
+    format("\n[ERROR]: Invalid operator in length condition!\n", []),
+    fail.
+
+valid_length(Length) :-
+    number(Length).
+valid_length(_) :-
+    format("\n[ERROR]: Invalid number in length condition!\n", []),
+    fail.
 
 parse_conditions(nil, AllowedKinds, AllowedKinds, AllowedLengths, AllowedLengths).
 parse_conditions(kind(K), AccKinds, [K | AccKinds], AllowedLengths, AllowedLengths).
@@ -64,7 +118,7 @@ has_kind(Tours, Kind) :-
 allowed_lengths([], nil).
 allowed_lengths([LengthExpectation], LengthExpectation).
 allowed_lengths(_, _) :-
-    format("\nError: too many length conditions!", []),
+    format("\n[ERROR]: too many length conditions!\n", []),
     fail.
 
 path(Tours, Begin, End, AllowedKinds, LengthExpectation) :-

@@ -1,0 +1,5 @@
+zakopane.
+nil.
+kind(gorska), length(lt, 4), length(gt, 5).
+kind(gorska), length(le, 9).
+halt.

@@ -1,0 +1,4 @@
+brzeziny.
+nil.
+kind(gorska), kind(rower), length(lt, 20).
+halt.
