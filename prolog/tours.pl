@@ -41,10 +41,10 @@ conditions(Tours, Begin, End) :-
     read(Conditions),
     parse_conditions(Conditions, [], ParsedKinds, [], AllowedLengths),
     allowed_kinds(Tours, ParsedKinds, AllowedKinds),
-    allowed_lengths(AllowedLengths, SingleLength),
+    allowed_lengths(AllowedLengths, LengthExpectation),
     !,
     nl,
-    path(Tours, Begin, End, AllowedKinds, SingleLength).
+    path(Tours, Begin, End, AllowedKinds, LengthExpectation).
 
 parse_conditions(nil, AllowedKinds, AllowedKinds, AllowedLengths, AllowedLengths).
 parse_conditions(kind(K), AccKinds, [K | AccKinds], AllowedLengths, AllowedLengths).
@@ -62,15 +62,16 @@ has_kind(Tours, Kind) :-
     member(_ : (_, _, Kind, _), Tours).
 
 allowed_lengths([], nil).
-allowed_lenghts([SingleLength], SingleLength).
+allowed_lengths([LengthExpectation], LengthExpectation).
 allowed_lengths(_, _) :-
     format("\nError: too many length conditions!", []),
     fail.
 
-path(Tours, Begin, End, AllowedKinds, _) :-
+path(Tours, Begin, End, AllowedKinds, LengthExpectation) :-
     findall(Path, find_path(Tours, Begin, End, [], Path), Paths),
     filter_kinds(Paths, AllowedKinds, [], PathsWithAllowedKinds),
-    print_paths(PathsWithAllowedKinds),
+    filter_length(PathsWithAllowedKinds, LengthExpectation, [], PathsWithAllowedKindsAndLength),
+    print_paths(PathsWithAllowedKindsAndLength),
     begin(Tours).
 
 filter_kinds([], _, PathsWithAllowedKinds, PathsWithAllowedKinds).
@@ -84,6 +85,23 @@ is_of_kinds([], _).
 is_of_kinds([_ : (_, _, Kind, _) | Paths], AllowedKinds) :-
     member(Kind, AllowedKinds),
     is_of_kinds(Paths, AllowedKinds).
+
+filter_length(Paths, nil, [], Paths).
+filter_length([], _, PathsWithAllowedLength, PathsWithAllowedLength).
+filter_length([Path | Paths], LengthExpectation, Acc, PathsWithAllowedLength) :-
+    fulfills_length_expectation(Path, LengthExpectation),
+    filter_length(Paths, LengthExpectation, [Path | Acc], PathsWithAllowedLength).
+filter_length([_ | Paths], LengthExpectation, Acc, PathsWithAllowedLength) :-
+    filter_length(Paths, LengthExpectation, Acc, PathsWithAllowedLength).
+
+fulfills_length_expectation(Path, [Operator, ExpectedLength]) :-
+    path_length(Path, ActualLength),
+    length_operator(ActualLength, Operator, ExpectedLength).
+length_operator(ActualLength, eq, ExpectedLength) :- ActualLength =:= ExpectedLength.
+length_operator(ActualLength, lt, ExpectedLength) :- ActualLength < ExpectedLength.
+length_operator(ActualLength, le, ExpectedLength) :- ActualLength =< ExpectedLength.
+length_operator(ActualLength, gt, ExpectedLength) :- ActualLength > ExpectedLength.
+length_operator(ActualLength, ge, ExpectedLength) :- ActualLength >= ExpectedLength.
 
 find_path(Tours, Start, Finish, AlreadyVisited, Path) :-
     is_step(Tours, AlreadyVisited, Start, Finish, Step),
