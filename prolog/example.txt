@@ -1,4 +1,4 @@
-r1 : (zakopane, przeziny, rower, 25).
+r1 : (zakopane, brzeziny, rower, 25).
 r2 : (brzeziny, gasienicowa, rower, 15).
 r3 : (brzeziny, poroniec, rower, 10).
 r4 : (poroniec, rusinowa, rower, 6).
