@@ -1,91 +1,103 @@
 user:runtime_entry(start) :-
-    current_prolog_flag(argv, [ToursFile]) ->
-        process(ToursFile)
-    ;
-	    write('Usage: tours <tours_file.txt>\n').
+    current_prolog_flag(argv, [ToursFile]),
+    process(ToursFile).
+user:runtime_entry(start) :-
+    write('Usage: tours <tours_file.txt>\n').
 
 process(ToursFile) :-
     read_tours(ToursFile, Tours),
-    group(Tours, KnowledgeBase),
-    repl(KnowledgeBase),
+    prompt(_, ' '),
+    begin(Tours),
     write(bye),
     nl.
 
 read_tours(ToursFile, Tours) :-
     see(ToursFile),
-    get_char(Char),
-    read_tokens(Char, [], TokensList),
-    split_by(TokensList, [' ', ':', '(', ',', ')', '.', '\n'], [], [], Tours),
+    read(Tour),
+    read_tokens(Tour, [], Tours),
     seen.
 
-read_tokens(end_of_file, TokensList, TokensList).
-read_tokens(Char, Acc, TokensList) :-
-    get_char(AnotherChar),
-    read_tokens(AnotherChar, [Char | Acc], TokensList).
+read_tokens(end_of_file, Tours, Tours).
+read_tokens(Token, Acc, Tours) :-
+    read(AnotherToken),
+    read_tokens(AnotherToken, [Token | Acc], Tours).
 
-split_by([], _, [], Splitted, Splitted).
-split_by([], _, TokenAccList, Acc, Splitted) :-
-    name(TokenAcc, TokenAccList),
-    Splitted = [TokenAcc | Acc].
-split_by([Token | Tokens], Splitters, TokenAcc, Acc, Splitted) :-
-    member(Token, Splitters) ->
-        (TokenAcc = [] ->
-            split_by(Tokens, Splitters, [], Acc, Splitted)
-        ;
-            name(NewToken, TokenAcc),
-            split_by(Tokens, Splitters, [], [NewToken | Acc], Splitted)
-        )
-    ;
-        name(Token, [TokenNum]),
-        split_by(Tokens, Splitters, [TokenNum | TokenAcc], Acc, Splitted).
-
-group([], []).
-group([Id, From, To, Kind, Length | Rest], [Group | RestGroupped]) :-
-    Group = [Id, From, To, Kind, Length],
-    group(Rest, RestGroupped).
-
-print_tours([]) :- !.
-print_tours([Tour|RestOfTours]) :-
-    write(Tour),
-    nl,
-    print_tours(RestOfTours).
-
-repl(KnowledgeBase) :-
+begin(Tours) :-
     format("Tour begin: ", []),
     read(Begin),
-    repl_begin(KnowledgeBase, Begin).
-
-repl_begin(_, halt).
-repl_begin(KnowledgeBase, Begin) :-
-    format("\nTour end: ", []),
-    read(End),
-    format("\nSearching tour ~a ~~> ~a...", [Begin, End]),
-    find_path(KnowledgeBase, Begin, End, Path),
     nl,
+    end(Tours, Begin).
+
+end(_, halt).
+end(Tours, Begin) :-
+    format("Tour end: ", []),
+    read(End),
+    nl,
+    conditions(Tours, Begin, End).
+
+conditions(Tours, Begin, End) :-
+    repeat,
+    format("Conditions: ", []),
+    read(Conditions),
+    parse_conditions(Conditions, [], AllowedKinds, [], AllowedLengths),
+    !,
+    nl,
+    path(Tours, Begin, End, AllowedKinds, AllowedLengths).
+
+parse_conditions(nil, AllowedKinds, AllowedKinds, AllowedLengths, AllowedLengths).
+parse_conditions(kind(K), AccKinds, [K | AccKinds], AllowedLengths, AllowedLengths).
+parse_conditions(length(Operator, Length), AllowedKinds, AllowedKinds, AccLengths, [[Operator, Length] | AccLengths]).
+parse_conditions((kind(K), Conditions), AccKinds, AllowedKinds, AccLengths, AllowedLengths) :-
+    parse_conditions(Conditions, [K | AccKinds], AllowedKinds, AccLengths, AllowedLengths).
+parse_conditions((length(Operator, Length), Conditions), AccKinds, AllowedKinds, AccLengths, AllowedLengths) :-
+    parse_conditions(Conditions, AccKinds, AllowedKinds, [[Operator, Length] | AccLengths], AllowedLengths).
+
+path(Tours, Begin, End, AllowedKinds, _) :-
+    findall(Path, find_path(Tours, Begin, End, [], Path), Paths),
+    filter_kinds(Paths, AllowedKinds, [], PathsWithAllowedKinds),
+    print_paths(PathsWithAllowedKinds),
+    begin(Tours).
+
+filter_kinds([], _, PathsWithAllowedKinds, PathsWithAllowedKinds).
+filter_kinds([Path | Paths], AllowedKinds, Acc, PathsWithAllowedKinds) :-
+    is_of_kinds(Path, AllowedKinds),
+    filter_kinds(Paths, AllowedKinds, [Path | Acc], PathsWithAllowedKinds).
+filter_kinds([_ | Paths], AllowedKinds, Acc, PathsWithAllowedKinds) :-
+    filter_kinds(Paths, AllowedKinds, Acc, PathsWithAllowedKinds).
+
+is_of_kinds([], _).
+is_of_kinds([_ : (_, _, Kind, _) | Paths], AllowedKinds) :-
+    member(Kind, AllowedKinds),
+    is_of_kinds(Paths, AllowedKinds).
+
+find_path(Tours, Start, Finish, AlreadyVisited, Path) :-
+    is_step(Tours, AlreadyVisited, Start, Finish, Step),
+    Path = [Step].
+find_path(Tours, Start, Finish, AlreadyVisited, Path) :-
+    is_step(Tours, AlreadyVisited, Start, Stop, Step),
+    find_path(Tours, Stop, Finish, [Step | AlreadyVisited], Forward),
+    Path = [Step | Forward].
+
+is_step(Tours, AlreadyVisited, Start, Stop, Step) :-
+    member(Step, Tours),
+    \+(member(Step, AlreadyVisited)),
+    Step = _ : (Start, Stop, _, _).
+
+print_paths([]).
+print_paths([Path | Paths]) :-
     print_path(Path),
     print_length(Path),
-    nl, nl,
-    repl(KnowledgeBase).
-
-find_path(KnowledgeBase, Start, Finish, Path) :-
-    is_step(KnowledgeBase, Start, Finish, Step),
-    Path = [Step].
-find_path(KnowledgeBase, Start, Finish, Path) :-
-    is_step(KnowledgeBase, Start, Stop, Step),
-    find_path(KnowledgeBase, Stop, Finish, RestPath),
-    Path = [Step | RestPath].
-
-is_step(KnowledgeBase, Start, Stop, Step) :-
-    member(Step, KnowledgeBase),
-    Step = [_, Start, Stop, _, _].
+    nl,
+    nl,
+    print_paths(Paths).
 
 print_path(Path) :-
-    [[_, Start, _, _, _]|_] = Path,
+    [_ : (Start, _, _, _) | _] = Path,
     write(Start),
     print_path_rest(Path).
 
 print_path_rest([]).
-print_path_rest([[Id, _, Stop, Kind, _]|Path]) :-
+print_path_rest([Id : (_, Stop, Kind, _) | Path]) :-
     format(" -(~a,~a)-> ~a", [Id, Kind, Stop]),
     print_path_rest(Path).
 
@@ -96,6 +108,5 @@ print_length(Path) :-
 path_length(Path, Length) :- path_length_tail(Path, 0, Length).
 
 path_length_tail([], Length, Length).
-path_length_tail([[_, _, _, _, StepLength] | Path], Acc, Length) :-
+path_length_tail([_ : (_, _, _, StepLength) | Path], Acc, Length) :-
     path_length_tail(Path, Acc + StepLength, Length).
-
