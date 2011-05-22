@@ -39,7 +39,8 @@ conditions(Tours, Begin, End) :-
     repeat,
     format("Conditions: ", []),
     read(Conditions),
-    parse_conditions(Conditions, [], AllowedKinds, [], AllowedLengths),
+    parse_conditions(Conditions, [], ParsedKinds, [], AllowedLengths),
+    allowed_kinds(Tours, ParsedKinds, AllowedKinds),
     !,
     nl,
     path(Tours, Begin, End, AllowedKinds, AllowedLengths).
@@ -51,6 +52,13 @@ parse_conditions((kind(K), Conditions), AccKinds, AllowedKinds, AccLengths, Allo
     parse_conditions(Conditions, [K | AccKinds], AllowedKinds, AccLengths, AllowedLengths).
 parse_conditions((length(Operator, Length), Conditions), AccKinds, AllowedKinds, AccLengths, AllowedLengths) :-
     parse_conditions(Conditions, AccKinds, AllowedKinds, [[Operator, Length] | AccLengths], AllowedLengths).
+
+allowed_kinds(Tours, [], AllowedKinds) :-
+    setof(Kind, has_kind(Tours, Kind), AllowedKinds).
+allowed_kinds(_, AllowedKinds, AllowedKinds).
+
+has_kind(Tours, Kind) :-
+    member(_ : (_, _, Kind, _), Tours).
 
 path(Tours, Begin, End, AllowedKinds, _) :-
     findall(Path, find_path(Tours, Begin, End, [], Path), Paths),
